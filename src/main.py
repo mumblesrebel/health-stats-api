@@ -18,18 +18,42 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.on_event("startup")
 async def startup_db_client():
-    app.mongodb_client = AsyncIOMotorClient(settings.MONGODB_URL)
-    app.mongodb = app.mongodb_client[settings.MONGODB_NAME]
+    try:
+        app.mongodb_client = AsyncIOMotorClient(settings.MONGODB_URL)
+        await app.mongodb_client.admin.command('ping')
+        app.mongodb = app.mongodb_client[settings.MONGODB_NAME]
+        print("Successfully connected to MongoDB")
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
+        app.mongodb_client = None
+        app.mongodb = None
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    app.mongodb_client.close()
+    if app.mongodb_client:
+        app.mongodb_client.close()
+
+@app.get("/health")
+async def health_check():
+    try:
+        if app.mongodb_client:
+            await app.mongodb_client.admin.command('ping')
+            db_status = "healthy"
+        else:
+            db_status = "not connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    return {
+        "status": "ok",
+        "database": db_status
+    }
 
 # Include routers
 app.include_router(
