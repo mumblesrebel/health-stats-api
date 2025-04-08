@@ -10,7 +10,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",  # Local development
+        "https://health-stats-tracker.netlify.app",  # Production frontend
+        "https://health-stats-tracker.windsurf.build"  # Alternative production URL
+    ]
+    ENVIRONMENT: str = "development"
 
     class Config:
         env_file = ".env"

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import sys
 import os
+import datetime
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -55,14 +56,31 @@ async def health_check():
     try:
         if app.mongodb_client:
             await app.mongodb_client.admin.command('ping')
-            db_status = "healthy"
+            db_info = await app.mongodb_client.server_info()
+            db_status = {
+                "status": "healthy",
+                "version": db_info.get('version'),
+                "connection": "connected",
+                "database": settings.MONGODB_NAME
+            }
         else:
-            db_status = "not connected"
+            db_status = {
+                "status": "error",
+                "connection": "not connected",
+                "database": settings.MONGODB_NAME
+            }
     except Exception as e:
-        db_status = f"error: {str(e)}"
+        db_status = {
+            "status": "error",
+            "connection": "error",
+            "message": str(e),
+            "database": settings.MONGODB_NAME
+        }
     
     return {
         "status": "ok",
+        "environment": settings.ENVIRONMENT,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
         "database": db_status
     }
 
