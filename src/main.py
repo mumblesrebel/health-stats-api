@@ -25,14 +25,25 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db_client():
     try:
-        app.mongodb_client = AsyncIOMotorClient(settings.MONGODB_URL)
+        print(f"Attempting to connect to MongoDB...")
+        app.mongodb_client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000
+        )
+        print(f"Client created, attempting to ping server...")
         await app.mongodb_client.admin.command('ping')
+        print(f"Server ping successful, selecting database...")
         app.mongodb = app.mongodb_client[settings.MONGODB_NAME]
-        print("Successfully connected to MongoDB")
+        server_info = await app.mongodb_client.server_info()
+        print(f"Successfully connected to MongoDB version {server_info.get('version')}")
+        print(f"Using database: {settings.MONGODB_NAME}")
     except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
+        print(f"Error connecting to MongoDB: {str(e)}")
+        if hasattr(e, 'details'):
+            print(f"Error details: {e.details}")
         app.mongodb_client = None
         app.mongodb = None
+        raise Exception(f"Failed to connect to MongoDB: {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
