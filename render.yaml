@@ -1,19 +1,17 @@
 services:
   - type: web
     name: health-stats-api
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
-      - key: MONGODB_URL
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
         sync: false
-      - key: MONGODB_NAME
-        value: health_stats
-      - key: SECRET_KEY
+      - key: JWT_SECRET
         generateValue: true
-      - key: ALGORITHM
-        value: HS256
-      - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: "30"
-      - key: CORS_ORIGINS
-        value: '["https://health-stats-tracker.windsurf.build"]'
+      - key: PORT
+        value: 8000
+      - key: CORS_ORIGIN
+        value: 'https://health-stats-tracker-frontend.onrender.com'
